@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi logements AHMP</title>
+<style>
+body {
+  margin:0;
+  padding:0;
+  font-family:sans-serif;
+  background:#111;
+  color:#fff;
+  position:relative;
+  overflow:hidden;
+}
+
+/* --- Conteneur du fond avec motifs diagonaux --- */
+#fond {
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:0;
+  pointer-events:none;
+}
+
+#fond span {
+  position:absolute;
+  font-size:18px;
+  opacity:0.25; /* plus lumineux */
+  user-select:none;
+}
+
+/* --- Application au premier plan --- */
+.app {
+  max-width:500px;
+  margin:auto;
+  padding:20px;
+  position:relative;
+  z-index:1;
+}
+
+@keyframes slideDown {
+  from { opacity:0; transform: translateY(-50px); }
+  to { opacity:1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity:0; transform: translateY(50px); }
+  to { opacity:1; transform: translateY(0); }
+}
+@keyframes flash {
+  0% { background-color:#222; }
+  50% { background-color:#E6007E; color:#fff; }
+  100% { background-color:#222; color:#fff; }
+}
+@keyframes pulse {
+  0% { transform: scale(1); color:#E6007E; }
+  50% { transform: scale(1.3); color:#FF00AA; }
+  100% { transform: scale(1); color:#E6007E; }
+}
+
+.animated-title {
+  font-size:3em;
+  text-align:center;
+  color:#E6007E;
+  animation: slideDown 0.8s forwards;
+}
+
+.input-group {
+  margin:15px 0;
+  display:flex;
+  flex-direction:column;
+  animation: slideDown 1s forwards;
+  opacity:0;
+}
+
+.select-ios {
+  font-size:1.5em;
+  padding:10px;
+  border-radius:12px;
+  border:2px solid #E6007E;
+  background:#222;
+  color:#fff;
+  -webkit-appearance: none;
+  text-align:center;
+}
+.select-ios option[disabled] { color: #aaa; }
+
+.button {
+  background:#E6007E; color:white; border:none;
+  padding:14px; border-radius:12px; font-size:1.2em; font-weight:600;
+  margin-top:10px; cursor:pointer; width:100%;
+  animation: slideUp 0.8s forwards;
+  transition: transform 0.1s;
+}
+.button:hover { background:#B20066; }
+.button:active { transform: scale(0.95); }
+
+.logement { background:#222; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #E6007E; color:#fff; }
+.counter { text-align:center; font-size:1.5em; margin:15px 0; font-weight:bold; color:#E6007E; }
+
+.input-group label { margin-bottom:5px; font-weight:bold; color:#fff; font-size:1.5em; text-align:center; }
+</style>
+</head>
+<body>
+
+<div id="fond"></div>
+
+<div class="app" id="startScreen">
+  <h1 class="animated-title">🪳 AHMP 🪳</h1>
+  <div class="input-group">
+    <label>Nombre total de logements :</label>
+    <select id="totalInput" class="select-ios">
+      <option value="" disabled selected>Sélectionner</option>
+    </select>
+  </div>
+  <button class="button" onclick="startApp()">Démarrer</button>
+</div>
+
+<div class="app" id="mainScreen" style="display:none;">
+  <h1 class="animated-title">🪳 Ajouter logement</h1>
+  <div class="input-group">
+    <label>Numéro du logement :</label>
+    <select id="numInput" class="select-ios">
+      <option value="" disabled selected>Sélectionner</option>
+    </select>
+  </div>
+  <div class="input-group">
+    <label>Étage :</label>
+    <select id="etageInput" class="select-ios">
+      <option value="" disabled selected>Sélectionner</option>
+    </select>
+  </div>
+  <button class="button" onclick="ajouterLogement()">Ajouter logement</button>
+  <button class="button" style="background:#AA0070; margin-top:10px;" onclick="resetApp()">Réinitialiser</button>
+  <div id="liste"></div>
+  <div class="counter" id="compteur">0 / 0</div>
+</div>
+
+<script>
+let total = 0;
+let logements = [];
+
+// Création du fond avec motifs diagonaux espacés
+const fond = document.getElementById('fond');
+const motifs = [{char:'AHMP', color:'rgba(255,0,200,0.2)'},{char:'🪳', color:'rgba(255,255,255,0.25)'},{char:'💉', color:'rgba(255,255,255,0.25)'}];
+const rows = 12; 
+const cols = 8; 
+const spacingX = window.innerWidth / cols;
+const spacingY = window.innerHeight / rows;
+
+for(let i=0;i<rows;i++){
+  for(let j=0;j<cols;j++){
+    const span = document.createElement('span');
+    const motif = motifs[(i*cols+j)%motifs.length];
+    span.textContent = motif.char;
+    span.style.color = motif.color;
+    span.style.top = `${i*spacingY}px`;
+    span.style.left = `${j*spacingX}px`;
+    span.style.fontSize='18px';
+    fond.appendChild(span);
+  }
+}
+
+// Options 1 à 100 pour total
+const totalSelect = document.getElementById('totalInput');
+for(let i=1;i<=100;i++){
+  const opt = document.createElement("option");
+  opt.value = i; opt.textContent = i;
+  totalSelect.appendChild(opt);
+}
+
+function startApp() {
+  total = parseInt(document.getElementById('totalInput').value);
+  if(isNaN(total)) return alert("Veuillez sélectionner un nombre de logements !");
+  logements=[];
+  localStorage.removeItem("logements");
+  localStorage.setItem("total", total);
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('mainScreen').style.display='block';
+  majCompteur();
+  majListe();
+
+  const numSelect = document.getElementById('numInput');
+  numSelect.innerHTML='<option value="" disabled selected>Sélectionner</option>';
+  for(let i=1;i<=total;i++){
+    const opt = document.createElement("option");
+    opt.value=i; opt.textContent=i;
+    numSelect.appendChild(opt);
+  }
+
+  const etageSelect = document.getElementById('etageInput');
+  etageSelect.innerHTML='<option value="" disabled selected>Sélectionner</option>';
+  for(let i=-2;i<=10;i++){
+    const opt = document.createElement("option");
+    opt.value=i; opt.textContent=i;
+    etageSelect.appendChild(opt);
+  }
+}
+
+function ajouterLogement() {
+  const num = parseInt(document.getElementById('numInput').value);
+  const etage = parseInt(document.getElementById('etageInput').value);
+  if(isNaN(num) || isNaN(etage)) return alert("Veuillez sélectionner le numéro et l'étage !");
+  if(logements.some(l=>l.numero===num)) return alert("Logement déjà enregistré !");
+  logements.push({numero:num, etage:etage});
+  localStorage.setItem("logements", JSON.stringify(logements));
+  majListe();
+  majCompteur();
+
+  const last = document.getElementById("liste").lastChild;
+  if(last){ last.style.animation="flash 0.5s"; }
+
+  const numSelect = document.getElementById('numInput');
+  const optionToRemove = Array.from(numSelect.options).find(o => parseInt(o.value) === num);
+  if(optionToRemove) numSelect.removeChild(optionToRemove);
+
+  document.getElementById('etageInput').value = "";
+
+  if(logements.length===total){
+    const compteur = document.getElementById("compteur");
+    compteur.style.animation="pulse 1s";
+  }
+
+  if(numSelect.options.length>1) numSelect.value="";
+}
+
+function majListe() {
+  const div = document.getElementById("liste");
+  div.innerHTML="";
+  logements.forEach(l=>{
+    const el = document.createElement("div");
+    el.className="logement";
+    el.textContent="Logement "+l.numero+" — Étage "+l.etage;
+    div.appendChild(el);
+  });
+}
+
+function majCompteur() {
+  document.getElementById("compteur").textContent = logements.length+" / "+total;
+}
+
+function resetApp() {
+  if(!confirm("Voulez-vous réinitialiser ?")) return;
+  logements=[];
+  localStorage.removeItem("logements");
+  document.getElementById('mainScreen').style.display='none';
+  document.getElementById('startScreen').style.display='block';
+  document.getElementById('totalInput').value="";
+}
+</script>
+
+</body>
+</html>
