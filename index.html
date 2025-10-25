@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi logements AHMP</title>
+<style>
+body { margin:0; padding:0; font-family:sans-serif; background:#111; color:#fff; }
+.app { max-width:500px; margin:auto; padding:20px; }
+h1 { text-align:center; font-size:2em; margin-bottom:20px; color:#E6007E; }
+.button {
+  background:#E6007E; color:white; border:none;
+  padding:14px; border-radius:12px; font-size:1.2em; font-weight:600;
+  margin-top:10px; cursor:pointer; width:100%;
+}
+.button:hover { background:#B20066; }
+.input-group { margin:15px 0; display:flex; flex-direction:column; }
+.input-group label { margin-bottom:5px; font-weight:bold; color:#fff; }
+.input-group input, .input-group select {
+  font-size:1.5em; padding:10px; border-radius:12px; border:2px solid #E6007E; text-align:center; background:#222; color:#fff; -webkit-appearance: none; }
+.logement { background:#222; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #E6007E; color:#fff; }
+.counter { text-align:center; font-size:1.5em; margin:15px 0; font-weight:bold; color:#E6007E; }
+</style>
+</head>
+<body>
+
+<div class="app" id="startScreen">
+  <h1>🪳 Suivi Logements AHMP</h1>
+  <div class="input-group">
+    <label>Nombre total de logements :</label>
+    <input type="number" id="totalInput" min="1" value="10">
+  </div>
+  <button class="button" onclick="startApp()">Démarrer</button>
+</div>
+
+<div class="app" id="mainScreen" style="display:none;">
+  <h1>🪳 Ajouter logement</h1>
+
+  <div class="input-group">
+    <label>Numéro du logement :</label>
+    <input type="number" id="numInput" min="0" value="0">
+  </div>
+
+  <div class="input-group">
+    <label>Étage :</label>
+    <input type="number" id="etageInput" min="-2" max="10" value="0">
+  </div>
+
+  <button class="button" onclick="ajouterLogement()">Ajouter logement</button>
+  <button class="button" style="background:#AA0070; margin-top:10px;" onclick="resetApp()">Réinitialiser</button>
+
+  <div id="liste"></div>
+  <div class="counter" id="compteur">0 / 0</div>
+</div>
+
+<script>
+let total = 0;
+let logements = [];
+
+function startApp() {
+  total = parseInt(document.getElementById('totalInput').value);
+  if(total < 1) return alert("Le nombre total doit être supérieur à 0");
+  logements=[];
+  localStorage.removeItem("logements");
+  localStorage.setItem("total", total);
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('mainScreen').style.display='block';
+  majCompteur();
+  majListe();
+}
+
+function ajouterLogement() {
+  let num = parseInt(document.getElementById('numInput').value);
+  let etage = parseInt(document.getElementById('etageInput').value);
+  if(logements.some(l=>l.numero===num)) return alert("Logement déjà enregistré !");
+  logements.push({numero:num, etage:etage});
+  localStorage.setItem("logements", JSON.stringify(logements));
+  majListe();
+  majCompteur();
+}
+
+function majListe() {
+  const div = document.getElementById("liste");
+  div.innerHTML="";
+  logements.forEach(l=>{
+    const el = document.createElement("div");
+    el.className="logement";
+    el.textContent="Logement "+l.numero+" — Étage "+l.etage;
+    div.appendChild(el);
+  });
+}
+
+function majCompteur() {
+  document.getElementById("compteur").textContent = logements.length+" / "+total;
+}
+
+function resetApp() {
+  if(!confirm("Voulez-vous réinitialiser ?")) return;
+  logements=[];
+  localStorage.removeItem("logements");
+  document.getElementById('mainScreen').style.display='none';
+  document.getElementById('startScreen').style.display='block';
+  document.getElementById('totalInput').value=10;
+}
+</script>
+
+</body>
+</html>
