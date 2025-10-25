@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Suivi logements AHMP</title>
 <style>
-body { margin:0; padding:0; font-family:sans-serif; background:#111; color:#fff; }
+body { margin:0; padding:0; font-family:sans-serif; background:#111; color:#fff; position:relative; overflow-x:hidden; }
 .app { max-width:500px; margin:auto; padding:20px; position:relative; z-index:1; }
 h1 { text-align:center; font-size:2em; margin-bottom:20px; color:#E6007E; }
 .button {
@@ -26,8 +26,7 @@ h1 { text-align:center; font-size:2em; margin-bottom:20px; color:#E6007E; }
   -webkit-appearance: none;
   text-align:center;
 }
-.logement { background:#222; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #E6007E; color:#fff; }
-.counter { text-align:center; font-size:1.5em; margin:15px 0; font-weight:bold; color:#E6007E; }
+.select-ios option[disabled] { color: #aaa; }
 
 /* --- Page d'accueil animée --- */
 .animated-title {
@@ -42,34 +41,29 @@ h1 { text-align:center; font-size:2em; margin-bottom:20px; color:#E6007E; }
   to { opacity:1; transform: translateY(0); }
 }
 
-/* AHMP en arrière-plan léger */
+/* Fond AHMP + cafards + seringues en diagonale */
 body::before {
-  content:"AHMP AHMP AHMP AHMP";
-  position:fixed;
-  top:0; left:0; width:100%; height:100%;
-  color:rgba(230,0,126,0.05);
-  font-size:5em; font-weight:bold;
-  display:flex; justify-content:center; align-items:center;
+  content: '';
+  position: fixed;
+  top:0; left:0; width:200%; height:200%;
+  background-color:#111;
+  background-image: 
+    linear-gradient(45deg, 
+      rgba(230,0,126,0.2) 0% 1%, 
+      transparent 1% 25%), 
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><text x="0" y="20" font-size="16" fill="rgba(230,0,126,0.3)">AHMP</text></svg>'),
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><text x="0" y="15" font-size="14" fill="rgba(230,0,126,0.3)">🪳</text></svg>'),
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><text x="0" y="15" font-size="14" fill="rgba(230,0,126,0.3)">💉</text></svg>');
+  background-repeat: repeat;
+  background-size: 80px 80px, 60px 60px, 40px 40px;
+  transform: rotate(-15deg);
   z-index:0;
   pointer-events:none;
 }
 
-/* Sélecteurs principaux écran d'ajout */
-.selector-container { display:flex; justify-content:center; gap:20px; margin-top:10px; }
-.selector {
-  width:80px; height:150px; overflow-y:scroll; scroll-snap-type:y mandatory; 
-  border:2px solid #E6007E; border-radius:12px; background:#222; text-align:center;
-}
-.selector div {
-  height:50px; display:flex; align-items:center; justify-content:center;
-  font-size:1.5em; color:#fff; scroll-snap-align:center;
-}
-.selector::-webkit-scrollbar { width:0; }
-.selected-indicator {
-  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  height:50px; width:80px; border-top:2px solid #E6007E; border-bottom:2px solid #E6007E;
-  pointer-events:none;
-}
+/* Écran ajout logement */
+.logement { background:#222; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #E6007E; color:#fff; }
+.counter { text-align:center; font-size:1.5em; margin:15px 0; font-weight:bold; color:#E6007E; }
 </style>
 </head>
 <body>
@@ -81,7 +75,7 @@ body::before {
   <div class="input-group">
     <label style="font-size:2em; text-align:center;">Nombre total de logements :</label>
     <select id="totalInput" class="select-ios" style="font-size:2em; padding:20px;">
-      <!-- Options générées par JS -->
+      <option value="" disabled selected>Sélectionner</option>
     </select>
   </div>
   
@@ -94,12 +88,16 @@ body::before {
 
   <div class="input-group">
     <label>Numéro du logement :</label>
-    <select id="numInput" class="select-ios"></select>
+    <select id="numInput" class="select-ios">
+      <option value="" disabled selected>Sélectionner</option>
+    </select>
   </div>
 
   <div class="input-group">
     <label>Étage :</label>
-    <select id="etageInput" class="select-ios"></select>
+    <select id="etageInput" class="select-ios">
+      <option value="" disabled selected>Sélectionner</option>
+    </select>
   </div>
 
   <button class="button" onclick="ajouterLogement()">Ajouter logement</button>
@@ -113,8 +111,8 @@ body::before {
 let total = 0;
 let logements = [];
 
+// Page d'accueil : générer options 1 à 100
 const totalSelect = document.getElementById('totalInput');
-// Générer options 1 à 100
 for(let i=1;i<=100;i++){
   const opt = document.createElement("option");
   opt.value = i; opt.textContent = i;
@@ -123,7 +121,7 @@ for(let i=1;i<=100;i++){
 
 function startApp() {
   total = parseInt(document.getElementById('totalInput').value);
-  if(isNaN(total) || total < 1) return alert("Le nombre total doit être supérieur à 0");
+  if(isNaN(total)) return alert("Veuillez sélectionner un nombre de logements !");
   logements=[];
   localStorage.removeItem("logements");
   localStorage.setItem("total", total);
@@ -132,18 +130,18 @@ function startApp() {
   majCompteur();
   majListe();
 
-  // Générer options numéros logements
+  // Numéro de logement : 1 à total avec option "Sélectionner"
   const numSelect = document.getElementById('numInput');
-  numSelect.innerHTML="";
-  for(let i=0;i<total;i++){
+  numSelect.innerHTML='<option value="" disabled selected>Sélectionner</option>';
+  for(let i=1;i<=total;i++){
     const opt = document.createElement("option");
     opt.value=i; opt.textContent=i;
     numSelect.appendChild(opt);
   }
 
-  // Générer options étages (-2 à 10)
+  // Étage : -2 à 10 avec option "Sélectionner"
   const etageSelect = document.getElementById('etageInput');
-  etageSelect.innerHTML="";
+  etageSelect.innerHTML='<option value="" disabled selected>Sélectionner</option>';
   for(let i=-2;i<=10;i++){
     const opt = document.createElement("option");
     opt.value=i; opt.textContent=i;
@@ -154,11 +152,16 @@ function startApp() {
 function ajouterLogement() {
   const num = parseInt(document.getElementById('numInput').value);
   const etage = parseInt(document.getElementById('etageInput').value);
+  if(isNaN(num) || isNaN(etage)) return alert("Veuillez sélectionner le numéro et l'étage !");
   if(logements.some(l=>l.numero===num)) return alert("Logement déjà enregistré !");
   logements.push({numero:num, etage:etage});
   localStorage.setItem("logements", JSON.stringify(logements));
   majListe();
   majCompteur();
+
+  // Réinitialiser les selects sur "Sélectionner"
+  document.getElementById('numInput').value = "";
+  document.getElementById('etageInput').value = "";
 }
 
 function majListe() {
