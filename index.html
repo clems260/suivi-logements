@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi logements AHMP</title>
+<style>
+body { margin:0; padding:0; font-family:sans-serif; background:#111; color:#fff; overflow-x:hidden; overflow-y:auto; }
+.app { max-width:500px; margin:auto; padding:20px; position:relative; z-index:10; }
+h1 { text-align:center; font-size:2em; margin-bottom:20px; color:#E6007E; }
+.button {
+  background:#E6007E; color:white; border:none;
+  padding:14px; border-radius:12px; font-size:1.2em; font-weight:600;
+  margin-top:10px; cursor:pointer; width:100%; transition: transform 0.2s ease;
+}
+.button:hover { transform: scale(1.05); background:#B20066; }
+.input-group { margin:15px 0; display:flex; flex-direction:column; }
+.input-group label { margin-bottom:5px; font-weight:bold; color:#fff; }
+.input-group select {
+  font-size:1.5em; padding:10px; border-radius:12px; border:2px solid #E6007E; text-align:center; background:#222; color:#fff; -webkit-appearance: none; }
+.logement { background:#222; padding:10px; margin-top:8px; border-radius:8px; border:1px solid #E6007E; color:#fff; }
+.counter { text-align:center; font-size:1.5em; margin:15px 0; font-weight:bold; color:#E6007E; }
+#bgCanvas { position:fixed; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; }
+.rdv-box { background:#222; padding:10px; border-radius:8px; border:1px solid #E6007E; margin-top:10px; }
+.rdv-box div { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+.finalScreen { display:none; text-align:center; font-size:2em; color:#0f0; margin-top:50px; }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="app" id="startScreen">
+  <h1>🪳 Suivi Logements AHMP</h1>
+  <div class="input-group">
+    <label>Nombre total de logements :</label>
+    <select id="totalInput"><option value="" disabled selected>Sélectionner</option></select>
+  </div>
+  <div class="input-group">
+    <label>Nombre de rendez-vous :</label>
+    <select id="rdvCount"><option value="" disabled selected>Sélectionner</option></select>
+  </div>
+  <div class="input-group" id="rdvInputs"></div>
+  <button class="button" onclick="startApp()">Démarrer</button>
+</div>
+
+<div class="app" id="mainScreen" style="display:none;">
+  <h1>🪳 Ajouter logement</h1>
+
+  <div class="input-group">
+    <label>Numéro du logement :</label>
+    <select id="numInput"><option value="" disabled selected>Sélectionner</option></select>
+  </div>
+
+  <div class="input-group">
+    <label>Étage :</label>
+    <select id="etageInput"><option value="" disabled selected>Sélectionner</option></select>
+  </div>
+
+  <div class="input-group">
+    <label>Accès au logement :</label>
+    <select id="accesInput">
+      <option value="" disabled selected>Sélectionner</option>
+      <option value="oui">Oui</option>
+      <option value="non">Non</option>
+    </select>
+  </div>
+
+  <button class="button" onclick="ajouterLogement()">Ajouter logement</button>
+  <button class="button" style="background:#AA0070; margin-top:10px;" onclick="resetApp()">Réinitialiser</button>
+
+  <div id="liste"></div>
+  <div class="counter" id="compteur">0 / 0</div>
+
+  <h2>Logements avec rendez-vous</h2>
+  <div class="rdv-box" id="rdvListe"></div>
+  <div class="counter" id="compteurRdv">0 / 0</div>
+</div>
+
+<div class="app finalScreen" id="finalScreen">
+  <div>Fin du travail 🎉</div>
+  <button class="button" style="background:#0f0;color:#000;margin-top:20px;" onclick="retourAccueil()">Terminé</button>
+</div>
+
+<script>
+let total=0, logements=[], rdvs=[], rdvTotal=0;
+
+const totalSelect=document.getElementById('totalInput');
+for(let i=1;i<=100;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; totalSelect.appendChild(opt); }
+const rdvCountSelect=document.getElementById('rdvCount');
+for(let i=1;i<=20;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; rdvCountSelect.appendChild(opt); }
+
+rdvCountSelect.addEventListener('change',()=>{  
+  const n=parseInt(rdvCountSelect.value); rdvTotal=n;
+  const rdvInputs=document.getElementById('rdvInputs');
+  rdvInputs.innerHTML='';
+  for(let i=1;i<=n;i++){
+    const sel=document.createElement('select');
+    sel.innerHTML='<option value="" disabled selected>Sélectionner logement</option>';
+    for(let j=1;j<=parseInt(totalSelect.value||100);j++){
+      const o=document.createElement('option'); o.value=j; o.textContent=j; sel.appendChild(o);
+    }
+    sel.dataset.index=i-1;
+    sel.addEventListener('change',(e)=>{ // retirer du menu
+      const val=parseInt(e.target.value);
+      for(let k=0;k<sel.options.length;k++){
+        if(parseInt(sel.options[k].value)===val){ sel.options[k].disabled=true; }
+      }
+    });
+    rdvInputs.appendChild(sel);
+  }
+});
+
+function startApp(){
+  total=parseInt(totalSelect.value); if(isNaN(total)||total<1) return alert("Le nombre total doit être >0");
+  logements=[]; rdvs=[];
+  const rdvInputs=document.getElementById('rdvInputs').querySelectorAll('select');
+  rdvInputs.forEach(s=>{ if(s.value) rdvs.push({numero:parseInt(s.value),fait:false}); });
+  localStorage.setItem("total",total);
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('mainScreen').style.display='block';
+  majCompteur(); majListe(); majRdv();
+  const numInput=document.getElementById('numInput'); numInput.innerHTML='<option value="" disabled selected>Sélectionner</option>';
+  for(let i=1;i<=total;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; numInput.appendChild(opt); }
+  const etageInput=document.getElementById('etageInput'); etageInput.innerHTML='<option value="" disabled selected>Sélectionner</option>';
+  for(let i=-2;i<=10;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; etageInput.appendChild(opt); }
+  document.getElementById('accesInput').selectedIndex=0;
+}
+
+function ajouterLogement(){
+  let num=parseInt(document.getElementById('numInput').value);
+  let etage=parseInt(document.getElementById('etageInput').value);
+  let acces=document.getElementById('accesInput').value;
+  if(isNaN(num)||isNaN(etage)||!acces) return alert("Veuillez compléter toutes les informations");
+  if(logements.some(l=>l.numero===num)) return alert("Logement déjà ajouté");
+
+  logements.push({numero:num, etage:etage, acces:acces});
+
+  // retirer du menu numInput
+  const numInput=document.getElementById('numInput');
+  for(let i=0;i<numInput.options.length;i++){
+    if(parseInt(numInput.options[i].value)===num){ numInput.remove(i); break; }
+  }
+
+  // retirer du rdv si existe
+  rdvs.forEach(r=>{ if(r.numero===num) r.fait=true; });
+
+  majListe(); majCompteur(); majRdv();
+
+  document.getElementById('etageInput').selectedIndex=0;
+  document.getElementById('accesInput').selectedIndex=0;
+
+  // si tout terminé
+  if(logements.length===total){
+    document.getElementById('mainScreen').style.display='none';
+    document.getElementById('finalScreen').style.display='block';
+  }
+}
+
+function majListe(){
+  const div=document.getElementById('liste'); div.innerHTML='';
+  logements.forEach(l=>{
+    const el=document.createElement('div'); 
+    el.className='logement';
+    el.textContent='Logement '+l.numero+' — Étage '+l.etage+' — '+(l.acces==='oui'?'✔':'❌');
+    div.appendChild(el);
+  });
+}
+
+function majCompteur(){ document.getElementById('compteur').textContent=logements.length+' / '+total; }
+
+function majRdv(){
+  const div=document.getElementById('rdvListe'); div.innerHTML='';
+  rdvs.forEach((r,i)=>{
+    const el=document.createElement('div');
+    el.innerHTML=`<span>Logement ${r.numero}</span><input type="checkbox" ${r.fait?'checked':''} onchange="toggleRdv(${i},this)">`;
+    div.appendChild(el);
+  });
+  const done=rdvs.filter(r=>r.fait).length;
+  document.getElementById('compteurRdv').textContent=done+' / '+rdvs.length;
+}
+
+function toggleRdv(i,checkbox){ rdvs[i].fait=checkbox.checked; majRdv(); }
+
+function resetApp(){ 
+  if(!confirm("Réinitialiser ?")) return;
+  logements=[]; rdvs=[]; localStorage.removeItem("logements"); 
+  document.getElementById('mainScreen').style.display='none'; 
+  document.getElementById('startScreen').style.display='block'; 
+  totalSelect.selectedIndex=0; rdvCountSelect.selectedIndex=0; document.getElementById('rdvInputs').innerHTML=''; 
+}
+
+function retourAccueil(){
+  document.getElementById('finalScreen').style.display='none';
+  document.getElementById('startScreen').style.display='block';
+  totalSelect.selectedIndex=0; rdvCountSelect.selectedIndex=0; document.getElementById('rdvInputs').innerHTML='';
+}
+
+// --- Fond chaotique ---
+const canvas=document.getElementById('bgCanvas'); const ctx=canvas.getContext('2d');
+function resizeCanvas(){canvas.width=window.innerWidth; canvas.height=window.innerHeight;}
+window.addEventListener('resize',resizeCanvas); resizeCanvas();
+let icons=[]; const iconEmojis=['🪳','💉','AHMP'];
+const ICON_COUNT=50;
+for(let i=0;i<ICON_COUNT;i++){ icons.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,dx:(Math.random()*1.5+0.5)*(Math.random()<0.5?-1:1),dy:(Math.random()*1.5+0.5)*(Math.random()<0.5?-1:1),size:Math.random()*18+12,angle:Math.random()*2*Math.PI,da:(Math.random()*0.02-0.01),emoji:iconEmojis[i%3]}); }
+
+function animate(){ ctx.clearRect(0,0,canvas.width,canvas.height);
+  icons.forEach(icon=>{ icon.x+=icon.dx; icon.y+=icon.dy; icon.angle+=icon.da;
+    if(icon.x<0||icon.x>canvas.width) icon.dx*=-1;
+    if(icon.y<0||icon.y>canvas.height) icon.dy*=-1;
+    ctx.save();
+    ctx.translate(icon.x,icon.y); ctx.rotate(icon.angle); ctx.font=`${icon.size}px Arial`;
+    ctx.fillStyle=icon.emoji==='AHMP'?'#E6007E':'#fff'; ctx.fillText(icon.emoji,0,0); ctx.restore();
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>
