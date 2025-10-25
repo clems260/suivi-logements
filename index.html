@@ -1,154 +1,175 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Suivi logements AHMP</title>
 <style>
 /* Fonts import (Bebas Neue for AHMP / site, Playlist for Occitanie) */
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playlist:wght@400;700&display=swap');
 
 :root{
-  --accent: #E6007E;      /* couleur principale */
-  --accent-dark: #B20066; /* nuance secondaire / hover */
+  --accent: #E6007E;
+  --accent-dark: #B20066;
   --bg-1:#0b0b0f;
   --bg-2:#0f0820;
   --muted:#cfcfd3;
   --success:#0f0;
+  --overlay: rgba(0,0,0,0.6);
 }
 
+/* reset / base */
 *{box-sizing:border-box}
-html,body{height:100%}
-body {
-  margin:0;
-  padding:0;
-  /* APPLY AHMP FONT (Bebas Neue) TO ENTIRE SITE AS REQUESTED */
+html,body{height:100%; margin:0; padding:0;}
+body{
   font-family: 'Bebas Neue', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background: radial-gradient(1200px 600px at 10% 10%, rgba(230,0,126,0.06), transparent 8%),
-              radial-gradient(900px 400px at 90% 90%, rgba(182,0,102,0.04), transparent 6%),
-              linear-gradient(180deg,var(--bg-1),var(--bg-2));
   color:#fff;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
+  background:
+    radial-gradient(1200px 600px at 10% 10%, rgba(230,0,126,0.06), transparent 8%),
+    radial-gradient(900px 400px at 90% 90%, rgba(182,0,102,0.04), transparent 6%),
+    linear-gradient(180deg,var(--bg-1),var(--bg-2));
   overflow-x:hidden;
   overflow-y:auto;
 }
 
-/* centered app card with subtle glass effect */
-.app {
+/* Card - ensure opaque background so the app is always visible */
+.app{
   max-width:680px;
   margin:28px auto;
   padding:22px;
   position:relative;
-  z-index:10;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  z-index:20;
+  background-color: #0f0f11; /* solid fallback so content is visible */
+  background: linear-gradient(180deg, rgba(15,15,17,0.98), rgba(20,16,23,0.98));
   border-radius:14px;
-  border:1px solid rgba(230,0,126,0.09);
+  border:1px solid rgba(230,0,126,0.12);
   box-shadow: 0 8px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+  /* force painters to render background above canvas */
+  -webkit-backface-visibility: hidden;
 }
 
-/* title area */
+/* Title / logo */
 .title-area { text-align:center; margin-bottom:6px; }
+.logo-svg { display:block; margin:0 auto; max-width:360px; width:100%; height:auto; }
 
-/* inline SVG logo container */
-.logo-svg { display:inline-block; max-width:360px; width:100%; height:auto; }
-
-/* small subtitle under logo */
+/* subtitle */
 .subtitle { text-align:center;color:#ddd;margin-top:8px;margin-bottom:6px;font-size:0.95rem; }
 
-/* buttons */
-.button {
+/* Buttons - solid, non transparent */
+.button{
   background: linear-gradient(180deg,var(--accent),var(--accent-dark));
-  color:white; border:none;
-  padding:12px 14px; border-radius:12px; font-size:1.05rem; font-weight:700;
-  margin-top:10px; cursor:pointer; width:100%; transition: transform 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 6px 18px rgba(230,0,126,0.18);
+  background-color: var(--accent);
+  color:white;
+  border:none;
+  padding:12px 14px;
+  border-radius:12px;
+  font-size:1.05rem;
+  font-weight:700;
+  margin-top:10px;
+  cursor:pointer;
+  width:100%;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  box-shadow: 0 6px 18px rgba(182,0,102,0.16);
+  opacity: 1; /* ensure opaque */
 }
-.button:active{ transform:translateY(1px) scale(0.997); }
-.button:hover{ transform: scale(1.02); box-shadow: 0 10px 30px rgba(182,0,102,0.22); }
-.button[style*="background:#AA0070"]{ background: linear-gradient(180deg,#AA0070,#8B005C); }
-.button[style*="background:#0f0"]{ background: linear-gradient(180deg,#6ef56e,#39c439); color:#000; }
-
-/* input groups */
-.input-group { margin:14px 0; display:flex; flex-direction:column; gap:6px; }
-.input-group label { margin-bottom:0; font-weight:700; color:#fff; font-size:0.95rem; }
-
-/* select styling */
-select, input[type="number"] {
-  font-size:1.05rem; padding:12px 14px; border-radius:12px; border:1px solid rgba(230,0,126,0.18);
-  background: linear-gradient(180deg,#161616 0%, #1a1a1a 100%); color:#fff; outline:none;
-  transition: box-shadow 0.12s ease, border-color 0.12s ease;
-  -webkit-appearance:none; -moz-appearance:none; appearance:none;
+.button:active{ transform: translateY(1px); }
+.button:hover{ transform: scale(1.02); }
+.button.ghost{
+  background: linear-gradient(180deg,#AA0070,#8B005C);
+  background-color: #AA0070;
 }
-select:focus, input[type="number"]:focus { box-shadow: 0 6px 18px rgba(230,0,126,0.08); border-color:var(--accent); }
+.button.small{ width:auto; padding:8px 10px; font-size:0.95rem; }
 
-.input-group select { text-align:center; }
+/* Inputs / selects - solid, non transparent, clear contrast */
+.input-group{ margin:14px 0; display:flex; flex-direction:column; gap:6px; }
+.input-group label{ margin-bottom:0; font-weight:700; color:#fff; font-size:0.95rem; }
+select, input[type="number"], textarea {
+  font-size:1.05rem;
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid rgba(230,0,126,0.18);
+  background-color:#1b1b1d; /* solid background to avoid transparency */
+  color:#fff;
+  outline:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+  appearance:none;
+  box-shadow: none;
+}
+.input-group select{ text-align:center; }
+option{ background:#1b1b1d; color:#fff; }
 
-/* try to style options (may be ignored by some browsers/OS) */
-option { background:#222; color:#fff; }
+/* ensure selects are clearly visible on hover/focus */
+select:focus, input[type="number"]:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 6px 18px rgba(230,0,126,0.08);
+}
 
-/* subtle arrow */
-.input-group select { background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.12) 50%),
-                              linear-gradient(135deg, rgba(255,255,255,0.12) 50%, transparent 50%);
+/* small arrow styling (visual only) */
+.input-group select{
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.12) 50%),
+    linear-gradient(135deg, rgba(255,255,255,0.12) 50%, transparent 50%);
   background-position: calc(100% - 18px) calc(1em + 2px), calc(100% - 13px) calc(1em + 2px);
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
-  padding-right: 40px;
+  background-size:6px 6px,6px 6px;
+  background-repeat:no-repeat;
+  padding-right:40px;
 }
 
 /* logements list */
-.logement { background: linear-gradient(180deg,#171717, #151515); padding:12px; margin-top:8px; border-radius:10px; border:1px solid rgba(230,0,126,0.12); color:#fff; display:flex; align-items:center; gap:10px; box-shadow: 0 4px 14px rgba(0,0,0,0.45); }
-.logement small { color:var(--muted); }
-
-/* counters */
-.counter { text-align:center; font-size:1.05rem; margin:14px 0; font-weight:800; color:var(--accent); }
-
-/* background canvas */
-#bgCanvas { position:fixed; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; filter: blur(0.6px) saturate(1.05); }
+.logement{ background:#181818; padding:12px; margin-top:8px; border-radius:10px; border:1px solid rgba(230,0,126,0.08); color:#fff; display:flex; align-items:center; gap:10px; box-shadow:0 4px 14px rgba(0,0,0,0.45); }
+.counter{ text-align:center; font-size:1.05rem; margin:14px 0; font-weight:800; color:var(--accent); }
 
 /* rdv box */
-.rdv-box { background: linear-gradient(180deg,#161616,#131313); padding:12px; border-radius:10px; border:1px solid rgba(230,0,126,0.12); margin-top:12px; }
-.rdv-box div { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px; font-size:0.98rem; }
+.rdv-box{ background:#151515; padding:12px; border-radius:10px; border:1px solid rgba(230,0,126,0.08); margin-top:12px; }
+.rdv-box div{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px; font-size:0.98rem; }
 .rdv-box input[type="checkbox"]{ width:18px; height:18px; accent-color:var(--accent); transform:scale(1.05); }
 
 /* final screen & summary */
-.finalScreen { display:none; text-align:center; font-size:1.2rem; color:var(--success); margin-top:20px; }
-#summary { text-align:left; margin-top:18px; background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.02); max-height:320px; overflow:auto; }
-#summary h3 { margin:6px 0 10px 0; color:var(--accent); font-size:1.05rem; }
-#summary ul { margin:6px 0 12px 18px; padding:0; color:#ddd; }
+.finalScreen{ display:none; text-align:center; font-size:1.2rem; color:var(--success); margin-top:20px; }
+#summary{ text-align:left; margin-top:18px; background:#111; padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.02); max-height:320px; overflow:auto; color:#ddd; }
+#summary h3{ margin:6px 0 10px 0; color:var(--accent); font-size:1.05rem; }
+#summary ul{ margin:6px 0 12px 18px; padding:0; color:#ddd; }
+
+/* modal overlay / box */
+.modal-overlay{ position:fixed; inset:0; background:var(--overlay); display:none; align-items:center; justify-content:center; z-index:2000; }
+.modal{ width:92%; max-width:420px; background:#0f0f11; border-radius:12px; padding:16px; border:1px solid rgba(255,255,255,0.03); box-shadow:0 20px 60px rgba(0,0,0,0.6); }
+.modal h3{ margin:0 0 8px 0; color:var(--accent); font-size:1.15rem; }
+.modal .modal-row{ margin:8px 0; }
+
+/* ensure canvas is behind everything */
+#bgCanvas{ position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; filter: blur(0.6px) saturate(1.05); }
 
 /* responsive */
-@media (max-width:520px){
-  .app{ margin:12px; padding:14px; border-radius:12px; }
-  h1{ font-size:1.3rem; }
-  .button{ font-size:1rem; padding:10px; border-radius:10px; }
-  select{ font-size:1rem; padding:10px; }
-}
+@media (max-width:520px){ .app{ margin:12px; padding:14px; } .logo-svg{ max-width:280px; } }
 
-/* subtle focus outline for keyboard users */
-:focus { outline: 3px solid rgba(230,0,126,0.12); outline-offset:3px; }
+/* focus */
+:focus{ outline:3px solid rgba(230,0,126,0.12); outline-offset:3px; }
 </style>
 </head>
 <body>
 
 <canvas id="bgCanvas"></canvas>
 
+<!-- START SCREEN -->
 <div class="app" id="startScreen">
   <div class="title-area">
-    <!-- Inline SVG logo: AHMP with Occitanie centered just beneath -->
+    <!-- SVG logo centered; AHMP centered, Occitanie slightly to the right under AHMP -->
     <svg class="logo-svg" viewBox="0 0 700 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AHMP Occitanie logo">
       <defs>
         <style>
-          .ahmp { font-family: 'Bebas Neue', Arial, sans-serif; font-weight:700; fill: #E6007E; }
+          .ahmp { font-family: 'Bebas Neue', Arial, sans-serif; font-weight:700; fill:#E6007E; }
           .occ { font-family: 'Playlist', cursive; font-size:36px; fill:#E6007E; }
         </style>
       </defs>
 
-      <!-- AHMP large text -->
+      <!-- AHMP centered -->
       <g transform="translate(0,20)">
-        <text class="ahmp" x="10" y="68" font-size="88" transform="skewX(-8)">AHMP</text>
-        <!-- "Occitanie" centered under AHMP (closer than before) -->
-        <text class="occ" x="170" y="95" transform="rotate(-6 170,95)">Occitanie</text>
+        <text class="ahmp" x="350" y="68" font-size="88" text-anchor="middle" transform="skewX(-8)">AHMP</text>
+        <!-- Occitanie slightly to the right under AHMP -->
+        <text class="occ" x="390" y="100" transform="rotate(-6 390,100)">Occitanie</text>
       </g>
     </svg>
   </div>
@@ -159,38 +180,26 @@ option { background:#222; color:#fff; }
     <label>Nombre total de logements :</label>
     <select id="totalInput"><option value="" disabled selected>Sélectionner</option></select>
   </div>
+
   <div class="input-group">
     <label>Nombre de rendez-vous :</label>
     <select id="rdvCount"><option value="" disabled selected>Sélectionner</option></select>
   </div>
+
   <div class="input-group" id="rdvInputs"></div>
+
   <button class="button" onclick="startApp()">Démarrer</button>
 </div>
 
+<!-- MAIN SCREEN -->
 <div class="app" id="mainScreen" style="display:none;">
   <h1>🪳 Ajouter logement</h1>
 
+  <!-- Only number select visible; modal opens to finish details -->
   <div class="input-group">
     <label>Numéro du logement :</label>
     <select id="numInput"><option value="" disabled selected>Sélectionner</option></select>
   </div>
-
-  <div class="input-group">
-    <label>Étage :</label>
-    <select id="etageInput"><option value="" disabled selected>Sélectionner</option></select>
-  </div>
-
-  <div class="input-group">
-    <label>Accès au logement :</label>
-    <select id="accesInput">
-      <option value="" disabled selected>Sélectionner</option>
-      <option value="oui">Oui</option>
-      <option value="non">Non</option>
-    </select>
-  </div>
-
-  <button class="button" onclick="ajouterLogement()">Ajouter logement</button>
-  <button class="button" style="background:#AA0070; margin-top:10px;" onclick="resetApp()">Réinitialiser</button>
 
   <div id="liste"></div>
   <div class="counter" id="compteur">0 / 0</div>
@@ -200,259 +209,288 @@ option { background:#222; color:#fff; }
   <div class="counter" id="compteurRdv">0 / 0</div>
 </div>
 
-<div class="app finalScreen" id="finalScreen">
+<!-- FINAL SCREEN -->
+<div class="app finalScreen" id="finalScreen" style="display:none;">
   <div>Fin du travail 🎉</div>
   <div id="summary" aria-live="polite"></div>
   <button class="button" style="background:#0f0;color:#000;margin-top:20px;" onclick="retourAccueil()">Terminé</button>
 </div>
 
+<!-- Modal (step-by-step) -->
+<div id="modalOverlay" class="modal-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal" id="modalBox">
+    <h3 id="modalTitle">Configurer</h3>
+
+    <div id="modalStep1" class="modal-step">
+      <div class="modal-row"><label for="modalEtage">Étage :</label></div>
+      <div class="modal-row">
+        <select id="modalEtage"><option value="" disabled selected>Sélectionner</option></select>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
+        <button class="button ghost small" id="modalCancel1">Annuler</button>
+        <button class="button small" id="modalNext1">Suivant</button>
+      </div>
+    </div>
+
+    <div id="modalStep2" class="modal-step" style="display:none;">
+      <div class="modal-row"><label for="modalAcces">Accès au logement :</label></div>
+      <div class="modal-row">
+        <select id="modalAcces"><option value="" disabled selected>Sélectionner</option><option value="oui">Oui</option><option value="non">Non</option></select>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
+        <button class="button ghost small" id="modalBack2">Retour</button>
+        <button class="button small" id="modalValidate2">Valider</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script>
-let total=0, logements=[], rdvs=[], rdvTotal=0;
+/* ===== data & DOM refs ===== */
+let total = 0, logements = [], rdvs = [], rdvTotal = 0;
+let modalNumber = null; // number being configured in modal
 
-const totalSelect=document.getElementById('totalInput');
-for(let i=1;i<=100;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; totalSelect.appendChild(opt); }
-const rdvCountSelect=document.getElementById('rdvCount');
-for(let i=1;i<=20;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; rdvCountSelect.appendChild(opt); }
+const totalSelect = document.getElementById('totalInput');
+const rdvCountSelect = document.getElementById('rdvCount');
+const rdvInputsDiv = document.getElementById('rdvInputs');
 
-/* Build rdv selects and ensure chosen values are disabled in other selects */
-rdvCountSelect.addEventListener('change',()=>{  
-  const n=parseInt(rdvCountSelect.value); rdvTotal=n;
-  const rdvInputs=document.getElementById('rdvInputs');
-  rdvInputs.innerHTML='';
+const numInput = document.getElementById('numInput');
+const listeDiv = document.getElementById('liste');
+const compteurDiv = document.getElementById('compteur');
+const rdvListeDiv = document.getElementById('rdvListe');
+const compteurRdv = document.getElementById('compteurRdv');
+
+const modalOverlay = document.getElementById('modalOverlay');
+const modalBox = document.getElementById('modalBox');
+const modalTitle = document.getElementById('modalTitle');
+const modalEtage = document.getElementById('modalEtage');
+const modalAcces = document.getElementById('modalAcces');
+const modalStep1 = document.getElementById('modalStep1');
+const modalStep2 = document.getElementById('modalStep2');
+const modalNext1 = document.getElementById('modalNext1');
+const modalCancel1 = document.getElementById('modalCancel1');
+const modalBack2 = document.getElementById('modalBack2');
+const modalValidate2 = document.getElementById('modalValidate2');
+
+/* populate selects initially */
+for(let i=1;i<=100;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; totalSelect.appendChild(o); }
+for(let i=1;i<=20;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; rdvCountSelect.appendChild(o); }
+
+/* rdv selects builder */
+rdvCountSelect.addEventListener('change', () => {
+  const n = parseInt(rdvCountSelect.value) || 0;
+  rdvTotal = n;
+  rdvInputsDiv.innerHTML = '';
   for(let i=1;i<=n;i++){
-    const sel=document.createElement('select');
-    sel.innerHTML='<option value="" disabled selected>Sélectionner logement</option>';
+    const sel = document.createElement('select');
+    sel.innerHTML = '<option value="" disabled selected>Sélectionner logement</option>';
     for(let j=1;j<=parseInt(totalSelect.value||100);j++){
-      const o=document.createElement('option'); o.value=j; o.textContent=j; sel.appendChild(o);
+      const opt = document.createElement('option'); opt.value = j; opt.textContent = j; sel.appendChild(opt);
     }
-    sel.dataset.index=i-1;
-    rdvInputs.appendChild(sel);
+    sel.dataset.index = i-1;
+    rdvInputsDiv.appendChild(sel);
   }
-  // after creating all selects, attach change handler that refreshes all selects to disable chosen options elsewhere
-  const selects = rdvInputs.querySelectorAll('select');
+  // attach change handlers
+  const selects = rdvInputsDiv.querySelectorAll('select');
   selects.forEach(s => s.addEventListener('change', refreshRdvSelects));
-  // initial refresh to disable duplicates if any preselected
   refreshRdvSelects();
 });
 
-/* Refresh function: disable options chosen in other selects */
+/* refresh disables duplicate options across rdv selects */
 function refreshRdvSelects(){
-  const rdvInputs=document.getElementById('rdvInputs');
-  if(!rdvInputs) return;
-  const selects = rdvInputs.querySelectorAll('select');
-  // collect chosen values
+  const selects = rdvInputsDiv.querySelectorAll('select');
   const chosen = [];
-  selects.forEach(s => {
-    if(s.value) chosen.push(String(s.value));
-  });
-  // update options: disable if chosen in another select
+  selects.forEach(s => { if(s.value) chosen.push(String(s.value)); });
   selects.forEach(s => {
     const selfVal = s.value ? String(s.value) : null;
     for(let k=0;k<s.options.length;k++){
       const opt = s.options[k];
       const val = opt.value ? String(opt.value) : '';
-      if(val === '') continue; // the placeholder
-      // disable when chosen by another select (chosen contains val) but preserve if it's this select's current value
-      if(chosen.includes(val) && val !== selfVal){
-        opt.disabled = true;
-      } else {
-        opt.disabled = false;
-      }
+      if(val === '') continue;
+      opt.disabled = (chosen.includes(val) && val !== selfVal);
     }
   });
 }
 
-/* Existing functions (logic preserved) */
-function startApp(){
-  total=parseInt(totalSelect.value); if(isNaN(total)||total<1) return alert("Le nombre total doit être >0");
-  logements=[]; rdvs=[];
-  const rdvInputs=document.getElementById('rdvInputs').querySelectorAll('select');
-  rdvInputs.forEach(s=>{ if(s.value) rdvs.push({numero:parseInt(s.value),fait:false}); });
-  localStorage.setItem("total",total);
-  document.getElementById('startScreen').style.display='none';
-  document.getElementById('mainScreen').style.display='block';
-  majCompteur(); majListe(); majRdv();
-  const numInput=document.getElementById('numInput'); numInput.innerHTML='<option value="" disabled selected>Sélectionner</option>';
-  for(let i=1;i<=total;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; numInput.appendChild(opt); }
-  const etageInput=document.getElementById('etageInput'); etageInput.innerHTML='<option value="" disabled selected>Sélectionner</option>';
-  for(let i=-2;i<=10;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; etageInput.appendChild(opt); }
-  document.getElementById('accesInput').selectedIndex=0;
+/* ===== modal logic (step-by-step window) ===== */
+function openModalForNumber(num){
+  modalNumber = num;
+  modalTitle.textContent = "Configurer le logement n°" + num;
+  modalEtage.innerHTML = '<option value="" disabled selected>Sélectionner</option>';
+  for(let i=-2;i<=10;i++){ const o = document.createElement('option'); o.value = i; o.textContent = i; modalEtage.appendChild(o); }
+  modalAcces.selectedIndex = 0;
+  modalStep1.style.display = 'block';
+  modalStep2.style.display = 'none';
+  modalOverlay.style.display = 'flex';
+  modalOverlay.setAttribute('aria-hidden','false');
+  setTimeout(()=> modalEtage.focus(), 60);
+}
+function closeModal(){
+  modalOverlay.style.display = 'none';
+  modalOverlay.setAttribute('aria-hidden','true');
+  modalNumber = null;
+  modalEtage.innerHTML = '<option value="" disabled selected>Sélectionner</option>';
+  modalAcces.selectedIndex = 0;
+  if(numInput) numInput.selectedIndex = 0;
 }
 
-function ajouterLogement(){
-  let num=parseInt(document.getElementById('numInput').value);
-  let etage=parseInt(document.getElementById('etageInput').value);
-  let acces=document.getElementById('accesInput').value;
-  if(isNaN(num)||isNaN(etage)||!acces) return alert("Veuillez compléter toutes les informations");
-  if(logements.some(l=>l.numero===num)) return alert("Logement déjà ajouté");
+/* modal navigation */
+modalCancel1.addEventListener('click', () => { closeModal(); });
+modalNext1.addEventListener('click', () => {
+  const et = parseInt(modalEtage.value);
+  if(isNaN(et)) return alert("Sélectionne l'étage avant de continuer.");
+  modalStep1.style.display = 'none';
+  modalStep2.style.display = 'block';
+  setTimeout(()=> modalAcces.focus(), 40);
+});
+modalBack2.addEventListener('click', () => {
+  modalStep2.style.display = 'none';
+  modalStep1.style.display = 'block';
+});
+modalValidate2.addEventListener('click', () => {
+  const et = parseInt(modalEtage.value);
+  const acc = modalAcces.value;
+  if(isNaN(et) || !acc) return alert("Choisis l'étage et l'accès avant de valider.");
+  addLogementFromModal(modalNumber, et, acc);
+  closeModal();
+});
 
-  logements.push({numero:num, etage:etage, acces:acces});
+/* open modal when number selected */
+numInput.addEventListener('change', (e) => {
+  const val = parseInt(e.target.value);
+  if(!val) return;
+  openModalForNumber(val);
+});
 
-  // retirer du menu numInput
-  const numInput=document.getElementById('numInput');
+/* add logement same as before */
+function addLogementFromModal(num, etage, acces){
+  if(logements.some(l => l.numero === num)){ alert("Logement déjà ajouté"); return; }
+  logements.push({ numero: num, etage: etage, acces: acces });
   for(let i=0;i<numInput.options.length;i++){
-    if(parseInt(numInput.options[i].value)===num){ numInput.remove(i); break; }
+    if(parseInt(numInput.options[i].value) === num){ numInput.remove(i); break; }
   }
-
-  // marque le rdv correspondant comme fait uniquement si accès 'oui'
-  rdvs.forEach(r=>{ if(r.numero===num) r.fait = (acces === 'oui'); });
-
-  majListe(); majCompteur(); majRdv();
-
-  document.getElementById('etageInput').selectedIndex=0;
-  document.getElementById('accesInput').selectedIndex=0;
-
-  // si tout terminé
-  if(logements.length===total){
-    buildSummary(); // <-- build the summary before showing final screen
-    document.getElementById('mainScreen').style.display='none';
-    document.getElementById('finalScreen').style.display='block';
+  rdvs.forEach(r => { if(r.numero === num) r.fait = (acces === 'oui'); });
+  majListe();
+  majCompteur();
+  majRdv();
+  if(logements.length === total && total > 0){
+    buildSummary();
+    document.getElementById('mainScreen').style.display = 'none';
+    document.getElementById('finalScreen').style.display = 'block';
   }
+}
+
+/* ===== other core functions (preserve behavior) ===== */
+function startApp(){
+  total = parseInt(totalSelect.value); if(isNaN(total) || total < 1) return alert("Le nombre total doit être >0");
+  logements = []; rdvs = [];
+  const selects = rdvInputsDiv.querySelectorAll('select');
+  selects.forEach(s => { if(s.value) rdvs.push({ numero: parseInt(s.value), fait: false }); });
+  localStorage.setItem("total", total);
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+  majCompteur(); majListe(); majRdv();
+  numInput.innerHTML = '<option value="" disabled selected>Sélectionner</option>';
+  for(let i=1;i<=total;i++){ const o = document.createElement('option'); o.value = i; o.textContent = i; numInput.appendChild(o); }
+  refreshRdvSelects();
 }
 
 function majListe(){
-  const div=document.getElementById('liste'); div.innerHTML='';
-  logements.forEach(l=>{
-    const el=document.createElement('div'); 
-    el.className='logement';
-    el.textContent='Logement '+l.numero+' — Étage '+l.etage+' — '+(l.acces==='oui'?'✔':'❌');
-    div.appendChild(el);
+  listeDiv.innerHTML = '';
+  logements.slice().sort((a,b)=>a.numero-b.numero).forEach(l => {
+    const el = document.createElement('div');
+    el.className = 'logement';
+    el.textContent = 'Logement ' + l.numero + ' — Étage ' + l.etage + ' — ' + (l.acces === 'oui' ? '✔' : '❌');
+    listeDiv.appendChild(el);
   });
 }
 
-function majCompteur(){ document.getElementById('compteur').textContent=logements.length+' / '+total; }
+function majCompteur(){ compteurDiv.textContent = logements.length + ' / ' + total; }
 
 function majRdv(){
-  const div=document.getElementById('rdvListe'); div.innerHTML='';
-  rdvs.forEach((r,i)=>{
-    const el=document.createElement('div');
-    // determine if checkbox should be enabled: only when rdv has a number AND that logement exists AND acces === 'oui'
-    const logementForRdv = logements.find(l => l.numero === r.numero);
-    const canMark = !!(r.numero && logementForRdv && logementForRdv.acces === 'oui');
-    // checkbox disabled if no logement or access not 'oui'
+  rdvListeDiv.innerHTML = '';
+  rdvs.forEach((r, i) => {
+    const el = document.createElement('div');
+    const lg = logements.find(l => l.numero === r.numero);
+    const canMark = !!(r.numero && lg && lg.acces === 'oui');
     const disabledAttr = canMark ? '' : 'disabled';
     const checkedAttr = r.fait ? 'checked' : '';
-    el.innerHTML=`<span>Logement ${r.numero ? r.numero : '(non assigné)'}</span><input type="checkbox" ${checkedAttr} ${disabledAttr} onchange="toggleRdv(${i},this)">`;
-    div.appendChild(el);
+    el.innerHTML = `<span>Logement ${r.numero ? r.numero : '(non assigné)'}</span><input type="checkbox" ${checkedAttr} ${disabledAttr} onchange="toggleRdv(${i},this)">`;
+    rdvListeDiv.appendChild(el);
   });
-  // counted rdv done only if r.fait === true AND corresponding logement has acces === 'oui'
-  const done = rdvs.filter(r=>{
+  const done = rdvs.filter(r => {
     if(!r.fait) return false;
-    const lg = logements.find(l=> l.numero === r.numero);
+    const lg = logements.find(l => l.numero === r.numero);
     return !!(lg && lg.acces === 'oui');
   }).length;
-  document.getElementById('compteurRdv').textContent=done+' / '+rdvs.length;
+  compteurRdv.textContent = done + ' / ' + rdvs.length;
 }
 
-function toggleRdv(i,checkbox){
-  // only allow checking if the related logement exists and acces === 'oui'
+function toggleRdv(i, checkbox){
   const r = rdvs[i];
   if(checkbox.checked){
-    if(!r.numero){
-      alert("RDV non assigné : sélectionnez d'abord un logement pour ce RDV.");
-      checkbox.checked = false;
-      return;
-    }
+    if(!r.numero){ alert("RDV non assigné : sélectionnez d'abord un logement pour ce RDV."); checkbox.checked = false; return; }
     const lg = logements.find(l => l.numero === r.numero);
-    if(!lg || lg.acces !== 'oui'){
-      alert("Impossible de marquer ce rendez‑vous comme effectué : vous n'avez pas indiqué 'Accès = Oui' pour ce logement.");
-      checkbox.checked = false;
-      return;
-    }
+    if(!lg || lg.acces !== 'oui'){ alert("Impossible de marquer ce rendez‑vous : accès non confirmé pour ce logement."); checkbox.checked = false; return; }
     rdvs[i].fait = true;
-  } else {
-    rdvs[i].fait = false;
-  }
+  } else rdvs[i].fait = false;
   majRdv();
 }
 
-function resetApp(){ 
+function resetApp(){
   if(!confirm("Réinitialiser ?")) return;
-  logements=[]; rdvs=[]; localStorage.removeItem("logements"); 
-  document.getElementById('mainScreen').style.display='none'; 
-  document.getElementById('startScreen').style.display='block'; 
-  totalSelect.selectedIndex=0; rdvCountSelect.selectedIndex=0; document.getElementById('rdvInputs').innerHTML=''; 
+  logements = []; rdvs = [];
+  localStorage.removeItem("logements");
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+  totalSelect.selectedIndex = 0; rdvCountSelect.selectedIndex = 0;
+  rdvInputsDiv.innerHTML = '';
 }
 
 function retourAccueil(){
-  // hide final screen, show start screen and reset selects (same as before)
-  document.getElementById('finalScreen').style.display='none';
-  document.getElementById('startScreen').style.display='block';
-  totalSelect.selectedIndex=0; rdvCountSelect.selectedIndex=0; document.getElementById('rdvInputs').innerHTML='';
-  // keep local data cleared as before (no auto-resume)
-  logements = [];
-  rdvs = [];
-  rdvTotal = 0;
-  document.getElementById('liste').innerHTML = '';
-  document.getElementById('compteur').textContent = '0 / 0';
-  document.getElementById('rdvListe').innerHTML = '';
-  document.getElementById('compteurRdv').textContent = '0 / 0';
-  // clear summary content
+  document.getElementById('finalScreen').style.display = 'none';
+  document.getElementById('startScreen').style.display = 'block';
+  totalSelect.selectedIndex = 0; rdvCountSelect.selectedIndex = 0; rdvInputsDiv.innerHTML = '';
+  logements = []; rdvs = []; rdvTotal = 0;
+  listeDiv.innerHTML = ''; compteurDiv.textContent = '0 / 0'; rdvListeDiv.innerHTML = ''; compteurRdv.textContent = '0 / 0';
   document.getElementById('summary').innerHTML = '';
 }
 
-// Build summary HTML inside the final screen (updated to show actual "entrés" count and rdvs réellement effectués)
 function buildSummary(){
-  const s = document.getElementById('summary');
-  s.innerHTML = ''; // clear
-  const title = document.createElement('h3');
-  title.textContent = 'Résumé de la session';
-  s.appendChild(title);
+  const s = document.getElementById('summary'); s.innerHTML = '';
+  const title = document.createElement('h3'); title.textContent = 'Résumé de la session'; s.appendChild(title);
 
-  // compute actual done counts: logements entered = acces === 'oui'
   const logementsEntered = logements.filter(l => l.acces === 'oui').length;
   const logementsTotal = total || 0;
-  // rdv considered done only if rdv.fait === true AND corresponding logement has acces === 'oui'
   const rdvDone = rdvs.filter(r => {
     if(!r.fait) return false;
     const lg = logements.find(l => l.numero === r.numero);
     return !!(lg && lg.acces === 'oui');
   }).length;
-  const rdvTotal = rdvs.length;
+  const rdvTotalLocal = rdvs.length;
 
-  // brief totals
-  const totals = document.createElement('div');
-  totals.style.color = '#ddd';
-  totals.style.marginBottom = '8px';
-  totals.textContent = `Logements entrés : ${logementsEntered} / ${logementsTotal} — Rendez‑vous effectués : ${rdvDone} / ${rdvTotal}`;
+  const totals = document.createElement('div'); totals.style.color = '#ddd'; totals.style.marginBottom = '8px';
+  totals.textContent = `Logements entrés : ${logementsEntered} / ${logementsTotal} — Rendez‑vous effectués : ${rdvDone} / ${rdvTotalLocal}`;
   s.appendChild(totals);
 
-  // logements list
-  const lgTitle = document.createElement('div');
-  lgTitle.style.marginTop = '6px';
-  lgTitle.style.fontWeight = '700';
-  lgTitle.style.color = 'var(--accent)';
-  lgTitle.textContent = 'Logements :';
+  const lgTitle = document.createElement('div'); lgTitle.style.marginTop = '6px'; lgTitle.style.fontWeight = '700'; lgTitle.style.color = 'var(--accent)'; lgTitle.textContent = 'Logements :';
   s.appendChild(lgTitle);
-
-  if(logements.length === 0){
-    const p = document.createElement('div'); p.style.color='#ddd'; p.textContent = 'Aucun logement ajouté.'; s.appendChild(p);
-  } else {
+  if(logements.length === 0){ const p = document.createElement('div'); p.style.color='#ddd'; p.textContent = 'Aucun logement ajouté.'; s.appendChild(p); }
+  else {
     const ul = document.createElement('ul');
-    logements.slice().sort((a,b)=>a.numero-b.numero).forEach(l=>{
-      const li = document.createElement('li');
-      li.textContent = `N°${l.numero} — Étage ${l.etage} — Accès : ${l.acces==='oui'?'Oui':'Non'}`;
-      ul.appendChild(li);
-    });
+    logements.slice().sort((a,b)=>a.numero-b.numero).forEach(l => { const li = document.createElement('li'); li.textContent = `N°${l.numero} — Étage ${l.etage} — Accès : ${l.acces==='oui'?'Oui':'Non'}`; ul.appendChild(li); });
     s.appendChild(ul);
   }
 
-  // rdvs list
-  const rdvTitle = document.createElement('div');
-  rdvTitle.style.marginTop = '8px';
-  rdvTitle.style.fontWeight = '700';
-  rdvTitle.style.color = 'var(--accent)';
-  rdvTitle.textContent = 'Rendez‑vous :';
+  const rdvTitle = document.createElement('div'); rdvTitle.style.marginTop = '8px'; rdvTitle.style.fontWeight = '700'; rdvTitle.style.color = 'var(--accent)'; rdvTitle.textContent = 'Rendez‑vous :';
   s.appendChild(rdvTitle);
-
-  if(rdvs.length === 0){
-    const p = document.createElement('div'); p.style.color='#ddd'; p.textContent = 'Aucun rendez‑vous configuré.'; s.appendChild(p);
-  } else {
+  if(rdvs.length === 0){ const p = document.createElement('div'); p.style.color='#ddd'; p.textContent = 'Aucun rendez‑vous configuré.'; s.appendChild(p); }
+  else {
     const ul2 = document.createElement('ul');
-    rdvs.forEach((r, idx)=>{
+    rdvs.forEach((r, idx) => {
       const li = document.createElement('li');
       const numText = r.numero ? `Logement ${r.numero}` : '(non assigné)';
-      // compute whether this rdv counts as done (needs acces yes)
       const lg = logements.find(l => l.numero === r.numero);
       const countsAsDone = !!(r.fait && lg && lg.acces === 'oui');
       const doneText = countsAsDone ? '— Effectué' : '— À faire / Manqué';
@@ -462,34 +500,20 @@ function buildSummary(){
     s.appendChild(ul2);
   }
 
-  // small note
-  const note = document.createElement('div');
-  note.style.marginTop = '10px';
-  note.style.color = '#bbb';
+  const note = document.createElement('div'); note.style.marginTop = '10px'; note.style.color = '#bbb';
   note.textContent = 'Lorsque vous cliquez sur "Terminé" vous retournerez au menu principal.';
   s.appendChild(note);
 }
 
-// --- Fond chaotique (inchangé) ---
-const canvas=document.getElementById('bgCanvas'); const ctx=canvas.getContext('2d');
-function resizeCanvas(){canvas.width=window.innerWidth; canvas.height=window.innerHeight;}
-window.addEventListener('resize',resizeCanvas); resizeCanvas();
-let icons=[]; const iconEmojis=['🪳','💉','AHMP'];
-const ICON_COUNT=50;
-for(let i=0;i<ICON_COUNT;i++){ icons.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,dx:(Math.random()*1.5+0.5)*(Math.random()<0.5?-1:1),dy:(Math.random()*1.5+0.5)*(Math.random()<0.5?-1:1),size:Math.random()*18+12,angle:Math.random()*2*Math.PI,da:(Math.random()*0.02-0.01),emoji:iconEmojis[i%3]}); }
-
-function animate(){ ctx.clearRect(0,0,canvas.width,canvas.height);
-  icons.forEach(icon=>{ icon.x+=icon.dx; icon.y+=icon.dy; icon.angle+=icon.da;
-    if(icon.x<0||icon.x>canvas.width) icon.dx*=-1;
-    if(icon.y<0||icon.y>canvas.height) icon.dy*=-1;
-    ctx.save();
-    ctx.translate(icon.x,icon.y); ctx.rotate(icon.angle); ctx.font=`${icon.size}px Arial`;
-    ctx.fillStyle=icon.emoji==='AHMP'?'#E6007E':'#fff'; ctx.fillText(icon.emoji,0,0); ctx.restore();
-  });
-  requestAnimationFrame(animate);
-}
+/* background canvas (unchanged) */
+const canvas = document.getElementById('bgCanvas'); const ctx = canvas.getContext('2d');
+function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas); resizeCanvas();
+let icons = []; const iconEmojis = ['🪳','💉','AHMP']; const ICON_COUNT = 50;
+for(let i=0;i<ICON_COUNT;i++){ icons.push({ x:Math.random()*canvas.width, y:Math.random()*canvas.height, dx:(Math.random()*1.5+0.5)*(Math.random()<0.5?-1:1), dy:(Math.random()*1.5+0.5)*(Math.random()<0.5?-1:1), size:Math.random()*18+12, angle:Math.random()*2*Math.PI, da:(Math.random()*0.02-0.01), emoji:iconEmojis[i%3] }); }
+function animate(){ ctx.clearRect(0,0,canvas.width,canvas.height); icons.forEach(icon=>{ icon.x+=icon.dx; icon.y+=icon.dy; icon.angle+=icon.da; if(icon.x<0||icon.x>canvas.width) icon.dx*=-1; if(icon.y<0||icon.y>canvas.height) icon.dy*=-1; ctx.save(); ctx.translate(icon.x,icon.y); ctx.rotate(icon.angle); ctx.font = `${icon.size}px Arial`; ctx.fillStyle = icon.emoji==='AHMP'?'#E6007E':'#fff'; ctx.fillText(icon.emoji,0,0); ctx.restore(); }); requestAnimationFrame(animate); }
 animate();
-</script>
 
+</script>
 </body>
 </html>
