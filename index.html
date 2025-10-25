@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Suivi logements AHMP</title>
+<style>
+/* Fonts import (Bebas Neue for AHMP / site, Playlist for Occitanie) */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playlist:wght@400;700&display=swap');
+
+:root{
+  --accent: #E6007E;      /* couleur principale */
+  --accent-dark: #B20066; /* nuance secondaire / hover */
+  --bg-1:#0b0b0f;
+  --bg-2:#0f0820;
+  --muted:#cfcfd3;
+  --success:#0f0;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body {
+  margin:0;
+  padding:0;
+  /* APPLY AHMP FONT (Bebas Neue) TO ENTIRE SITE AS REQUESTED */
+  font-family: 'Bebas Neue', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: radial-gradient(1200px 600px at 10% 10%, rgba(230,0,126,0.06), transparent 8%),
+              radial-gradient(900px 400px at 90% 90%, rgba(182,0,102,0.04), transparent 6%),
+              linear-gradient(180deg,var(--bg-1),var(--bg-2));
+  color:#fff;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+  overflow-y:auto;
+}
+
+/* centered app card with subtle glass effect */
+.app {
+  max-width:680px;
+  margin:28px auto;
+  padding:22px;
+  position:relative;
+  z-index:10;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius:14px;
+  border:1px solid rgba(230,0,126,0.09);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+/* title area */
+.title-area { text-align:center; margin-bottom:6px; }
+
+/* inline SVG logo container */
+.logo-svg { display:inline-block; max-width:360px; width:100%; height:auto; }
+
+/* small subtitle under logo */
+.subtitle { text-align:center;color:#ddd;margin-top:8px;margin-bottom:6px;font-size:0.95rem; }
+
+/* buttons */
+.button {
+  background: linear-gradient(180deg,var(--accent),var(--accent-dark));
+  color:white; border:none;
+  padding:12px 14px; border-radius:12px; font-size:1.05rem; font-weight:700;
+  margin-top:10px; cursor:pointer; width:100%; transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 6px 18px rgba(230,0,126,0.18);
+}
+.button:active{ transform:translateY(1px) scale(0.997); }
+.button:hover{ transform: scale(1.02); box-shadow: 0 10px 30px rgba(182,0,102,0.22); }
+.button[style*="background:#AA0070"]{ background: linear-gradient(180deg,#AA0070,#8B005C); }
+.button[style*="background:#0f0"]{ background: linear-gradient(180deg,#6ef56e,#39c439); color:#000; }
+
+/* input groups */
+.input-group { margin:14px 0; display:flex; flex-direction:column; gap:6px; }
+.input-group label { margin-bottom:0; font-weight:700; color:#fff; font-size:0.95rem; }
+
+/* select styling */
+select, input[type="number"] {
+  font-size:1.05rem; padding:12px 14px; border-radius:12px; border:1px solid rgba(230,0,126,0.18);
+  background: linear-gradient(180deg,#161616 0%, #1a1a1a 100%); color:#fff; outline:none;
+  transition: box-shadow 0.12s ease, border-color 0.12s ease;
+  -webkit-appearance:none; -moz-appearance:none; appearance:none;
+}
+select:focus, input[type="number"]:focus { box-shadow: 0 6px 18px rgba(230,0,126,0.08); border-color:var(--accent); }
+
+.input-group select { text-align:center; }
+
+/* try to style options (may be ignored by some browsers/OS) */
+option { background:#222; color:#fff; }
+
+/* subtle arrow */
+.input-group select { background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.12) 50%),
+                              linear-gradient(135deg, rgba(255,255,255,0.12) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(1em + 2px), calc(100% - 13px) calc(1em + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 40px;
+}
+
+/* logements list */
+.logement { background: linear-gradient(180deg,#171717, #151515); padding:12px; margin-top:8px; border-radius:10px; border:1px solid rgba(230,0,126,0.12); color:#fff; display:flex; align-items:center; gap:10px; box-shadow: 0 4px 14px rgba(0,0,0,0.45); }
+.logement small { color:var(--muted); }
+
+/* counters */
+.counter { text-align:center; font-size:1.05rem; margin:14px 0; font-weight:800; color:var(--accent); }
+
+/* background canvas */
+#bgCanvas { position:fixed; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; filter: blur(0.6px) saturate(1.05); }
+
+/* rdv box */
+.rdv-box { background: linear-gradient(180deg,#161616,#131313); padding:12px; border-radius:10px; border:1px solid rgba(230,0,126,0.12); margin-top:12px; }
+.rdv-box div { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px; font-size:0.98rem; }
+.rdv-box input[type="checkbox"]{ width:18px; height:18px; accent-color:var(--accent); transform:scale(1.05); }
+
+/* final screen & summary */
+.finalScreen { display:none; text-align:center; font-size:1.2rem; color:var(--success); margin-top:20px; }
+#summary { text-align:left; margin-top:18px; background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.02); max-height:320px; overflow:auto; }
+#summary h3 { margin:6px 0 10px 0; color:var(--accent); font-size:1.05rem; }
+#summary ul { margin:6px 0 12px 18px; padding:0; color:#ddd; }
+
+/* responsive */
+@media (max-width:520px){
+  .app{ margin:12px; padding:14px; border-radius:12px; }
+  h1{ font-size:1.3rem; }
+  .button{ font-size:1rem; padding:10px; border-radius:10px; }
+  select{ font-size:1rem; padding:10px; }
+}
+
+/* subtle focus outline for keyboard users */
+:focus { outline: 3px solid rgba(230,0,126,0.12); outline-offset:3px; }
+</style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="app" id="startScreen">
+  <div class="title-area">
+    <!-- Inline SVG logo: AHMP with Occitanie centered just beneath -->
+    <svg class="logo-svg" viewBox="0 0 700 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="AHMP Occitanie logo">
+      <defs>
+        <style>
+          .ahmp { font-family: 'Bebas Neue', Arial, sans-serif; font-weight:700; fill: #E6007E; }
+          .occ { font-family: 'Playlist', cursive; font-size:36px; fill:#E6007E; }
+        </style>
+      </defs>
+
+      <!-- AHMP large text -->
+      <g transform="translate(0,20)">
+        <text class="ahmp" x="10" y="68" font-size="88" transform="skewX(-8)">AHMP</text>
+        <!-- "Occitanie" centered under AHMP (closer than before) -->
+        <text class="occ" x="170" y="95" transform="rotate(-6 170,95)">Occitanie</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="subtitle">🪳 Suivi Logements</div>
+
+  <div class="input-group">
+    <label>Nombre total de logements :</label>
+    <select id="totalInput"><option value="" disabled selected>Sélectionner</option></select>
+  </div>
+  <div class="input-group">
+    <label>Nombre de rendez-vous :</label>
+    <select id="rdvCount"><option value="" disabled selected>Sélectionner</option></select>
+  </div>
+  <div class="input-group" id="rdvInputs"></div>
+  <button class="button" onclick="startApp()">Démarrer</button>
+</div>
+
+<div class="app" id="mainScreen" style="display:none;">
+  <h1>🪳 Ajouter logement</h1>
+
+  <div class="input-group">
+    <label>Numéro du logement :</label>
+    <select id="numInput"><option value="" disabled selected>Sélectionner</option></select>
+  </div>
+
+  <div class="input-group">
+    <label>Étage :</label>
+    <select id="etageInput"><option value="" disabled selected>Sélectionner</option></select>
+  </div>
+
+  <div class="input-group">
+    <label>Accès au logement :</label>
+    <select id="accesInput">
+      <option value="" disabled selected>Sélectionner</option>
+      <option value="oui">Oui</option>
+      <option value="non">Non</option>
+    </select>
+  </div>
+
+  <button class="button" onclick="ajouterLogement()">Ajouter logement</button>
+  <button class="button" style="background:#AA0070; margin-top:10px;" onclick="resetApp()">Réinitialiser</button>
+
+  <div id="liste"></div>
+  <div class="counter" id="compteur">0 / 0</div>
+
+  <h2 style="margin-top:14px;">Logements avec rendez-vous</h2>
+  <div class="rdv-box" id="rdvListe"></div>
+  <div class="counter" id="compteurRdv">0 / 0</div>
+</div>
+
+<div class="app finalScreen" id="finalScreen">
+  <div>Fin du travail 🎉</div>
+  <div id="summary" aria-live="polite"></div>
+  <button class="button" style="background:#0f0;color:#000;margin-top:20px;" onclick="retourAccueil()">Terminé</button>
+</div>
+
+<script>
+let total=0, logements=[], rdvs=[], rdvTotal=0;
+
+const totalSelect=document.getElementById('totalInput');
+for(let i=1;i<=100;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; totalSelect.appendChild(opt); }
+const rdvCountSelect=document.getElementById('rdvCount');
+for(let i=1;i<=20;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; rdvCountSelect.appendChild(opt); }
+
+/* Build rdv selects and ensure chosen values are disabled in other selects */
+rdvCountSelect.addEventListener('change',()=>{  
+  const n=parseInt(rdvCountSelect.value); rdvTotal=n;
+  const rdvInputs=document.getElementById('rdvInputs');
+  rdvInputs.innerHTML='';
+  for(let i=1;i<=n;i++){
+    const sel=document.createElement('select');
+    sel.innerHTML='<option value="" disabled selected>Sélectionner logement</option>';
+    for(let j=1;j<=parseInt(totalSelect.value||100);j++){
+      const o=document.createElement('option'); o.value=j; o.textContent=j; sel.appendChild(o);
+    }
+    sel.dataset.index=i-1;
+    rdvInputs.appendChild(sel);
+  }
+  // after creating all selects, attach change handler that refreshes all selects to disable chosen options elsewhere
+  const selects = rdvInputs.querySelectorAll('select');
+  selects.forEach(s => s.addEventListener('change', refreshRdvSelects));
+  // initial refresh to disable duplicates if any preselected
+  refreshRdvSelects();
+});
+
+/* Refresh function: disable options chosen in other selects */
+function refreshRdvSelects(){
+  const rdvInputs=document.getElementById('rdvInputs');
+  if(!rdvInputs) return;
+  const selects = rdvInputs.querySelectorAll('select');
+  // collect chosen values
+  const chosen = [];
+  selects.forEach(s => {
+    if(s.value) chosen.push(String(s.value));
+  });
+  // update options: disable if chosen in another select
+  selects.forEach(s => {
+    const selfVal = s.value ? String(s.value) : null;
+    for(let k=0;k<s.options.length;k++){
+      const opt = s.options[k];
+      const val = opt.value ? String(opt.value) : '';
+      if(val === '') continue; // the placeholder
+      // disable when chosen by another select (chosen contains val) but preserve if it's this select's current value
+      if(chosen.includes(val) && val !== selfVal){
+        opt.disabled = true;
+      } else {
+        opt.disabled = false;
+      }
+    }
+  });
+}
+
+/* Existing functions (logic preserved) */
+function startApp(){
+  total=parseInt(totalSelect.value); if(isNaN(total)||total<1) return alert("Le nombre total doit être >0");
+  logements=[]; rdvs=[];
+  const rdvInputs=document.getElementById('rdvInputs').querySelectorAll('select');
+  rdvInputs.forEach(s=>{ if(s.value) rdvs.push({numero:parseInt(s.value),fait:false}); });
+  localStorage.setItem("total",total);
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('mainScreen').style.display='block';
+  majCompteur(); majListe(); majRdv();
+  const numInput=document.getElementById('numInput'); numInput.innerHTML='<option value="" disabled selected>Sélectionner</option>';
+  for(let i=1;i<=total;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; numInput.appendChild(opt); }
+  const etageInput=document.getElementById('etageInput'); etageInput.innerHTML='<option value="" disabled selected>Sélectionner</option>';
+  for(let i=-2;i<=10;i++){ const opt=document.createElement('option'); opt.value=i; opt.textContent=i; etageInput.appendChild(opt); }
+  document.getElementById('accesInput').selectedIndex=0;
+}
+
+function ajouterLogement(){
+  let num=parseInt(document.getElementById('numInput').value);
+  let etage=parseInt(document.getElementById('etageInput').value);
+  let acces=document.getElementById('accesInput').value;
+  if(isNaN(num)||isNaN(etage)||!acces) return alert("Veuillez compléter toutes les informations");
+  if(logements.some(l=>l.numero===num)) return alert("Logement déjà ajouté");
+
+  logements.push({numero:num, etage:etage, acces:acces});
+
+  // retirer du menu numInput
+  const numInput=document.getElementById('numInput');
+  for(let i=0;i<numInput.options.length;i++){
+    if(parseInt(numInput.options[i].value)===num){ numInput.remove(i); break; }
+  }
+
+  // marque le rdv correspondant comme fait uniquement si accès 'oui'
+  rdvs.forEach(r=>{ if(r.numero===num) r.fait = (acces === 'oui'); });
+
+  majListe(); majCompteur(); majRdv();
+
+  document.getElementById('etageInput').selectedIndex=0;
+  document.getElementById('accesInput').selectedIndex=0;
+
+  // si tout terminé
+  if(logements.length===total){
+    buildSummary(); // <-- build the summary before showing final screen
+    document.getElementById('mainScreen').style.display='none';
+    document.getElementById('finalScreen').style.display='block';
+  }
+}
+
+function majListe(){
+  const div=document.getElementById('liste'); div.innerHTML='';
+  logements.forEach(l=>{
+    const el=document.createElement('div'); 
+    el.className='logement';
+    el.textContent='Logement '+l.numero+' — Étage '+l.etage+' — '+(l.acces==='oui'?'✔':'❌');
+    div.appendChild(el);
+  });
+}
+
+function majCompteur(){ document.getElementById('compteur').textContent=logements.length+' / '+total; }
+
+function majRdv(){
+  const div=document.getElementById('rdvListe'); div.innerHTML='';
+  rdvs.forEach((r,i)=>{
+    const el=document.createElement('div');
+    // determine if checkbox should be enabled: only when rdv has a number AND that logement exists AND acces === 'oui'
+    const logementForRdv = logements.find(l => l.numero === r.numero);
+    const canMark = !!(r.numero && logementForRdv && logementForRdv.acces === 'oui');
+    // checkbox disabled if no logement or access not 'oui'
+    const disabledAttr = canMark ? '' : 'disabled';
+    const checkedAttr = r.fait ? 'checked' : '';
+    el.innerHTML=`<span>Logement ${r.numero ? r.numero : '(non assigné)'}</span><input type="checkbox" ${checkedAttr} ${disabledAttr} onchange="toggleRdv(${i},this)">`;
+    div.appendChild(el);
+  });
+  // counted rdv done only if r.fait === true AND corresponding logement has acces === 'oui'
+  const done = rdvs.filter(r=>{
+    if(!r.fait) return false;
+    const lg = logements.find(l=> l.numero === r.numero);
+    return !!(lg && lg.acces === 'oui');
+  }).length;
+  document.getElementById('compteurRdv').textContent=done+' / '+rdvs.length;
+}
+
+function toggleRdv(i,checkbox){
+  // only allow checking if the related logement exists and acces === 'oui'
+  const r = rdvs[i];
+  if(checkbox.checked){
+    if(!r.numero){
+      alert("RDV non assigné : sélectionnez d'abord un logement pour ce RDV.");
+      checkbox.checked = false;
+      return;
+    }
+    const lg = logements.find(l => l.numero === r.numero);
+    if(!lg || lg.acces !== 'oui'){
+      alert("Impossible de marquer ce rendez‑vous comme effectué : vous n'avez pas indiqué 'Accès = Oui' pour ce logement.");
+      checkbox.checked = false;
+      return;
+    }
+    rdvs[i].fait = true;
+  } else {
+    rdvs[i].fait = false;
+  }
+  majRdv();
+}
+
+function resetApp(){ 
+  if(!confirm("Réinitialiser ?")) return;
+  logements=[]; rdvs=[]; localStorage.removeItem("logements"); 
+  document.getElementById('mainScreen').style.display='none'; 
+  document.getElementById('startScreen').style.display='block'; 
+  totalSelect.selectedIndex=0; rdvCountSelect.selectedIndex=0; document.getElementById('rdvInputs').innerHTML=''; 
+}
+
+function retourAccueil(){
+  // hide final screen, show start screen and reset selects (same as before)
+  document.getElementById('finalScreen').style.display='none';
+  document.getElementById('startScreen').style.display='block';
+  totalSelect.selectedIndex=0; rdvCountSelect.selectedIndex=0; document.getElementById('rdvInputs').innerHTML='';
+  // keep local data cleared as before (no auto-resume)
+  logements = [];
+  rdvs = [];
+  rdvTotal = 0;
+  document.getElementById('liste').innerHTML = '';
+  document.getElementById('compteur').textContent = '0 / 0';
+  document.getElementById('rdvListe').innerHTML = '';
+  document.getElementById('compteurRdv').textContent = '0 / 0';
+  // clear summary content
+  document.getElementById('summary').innerHTML = '';
+}
+
+// Build summary HTML inside the final screen (updated to show actual "entrés" count and rdvs réellement effectués)
+function buildSummary(){
+  const s = document.getElementById('summary');
+  s.innerHTML = ''; // clear
+  const title = document.createElement('h3');
+  title.textContent = 'Résumé de la session';
+  s.appendChild(title);
+
+  // compute actual done counts: logements entered = acces === 'oui'
+  const logementsEntered = logements.filter(l => l.acces === 'oui').length;
+  const logementsTotal = total || 0;
+  // rdv considered done only if rdv.fait === true AND corresponding logement has acces === 'oui'
+  const rdvDone = rdvs.filter(r => {
+    if(!r.fait) return false;
+    const lg = logements.find(l => l.numero === r.numero);
+    return !!(lg && lg.acces === 'oui');
+  }).length;
+  const rdvTotal = rdvs.length;
+
+  // brief totals
+  const totals = document.createElement('div');
+  totals.style.color = '#ddd';
+  totals.style.marginBottom = '8px';
+  totals.textContent = `Logements entrés : ${logementsEntered} / ${logementsTotal} — Rendez‑vous effectués : ${rdvDone} / ${rdvTotal}`;
+  s.appendChild(totals);
+
+  // logements list
+  const lgTitle = document.createElement('div');
+  lgTitle.style.marginTop = '6px';
+  lgTitle.style.fontWeight = '700';
+  lgTitle.style.color = 'var(--accent)';
+  lgTitle.textContent = 'Logements :';
+  s.appendChild(lgTitle);
+
+  if(logements.length === 0){
+    const p = document.createElement('div'); p.style.color='#ddd'; p.textContent = 'Aucun logement ajouté.'; s.appendChild(p);
+  } else {
+    const ul = document.createElement('ul');
+    logements.slice().sort((a,b)=>a.numero-b.numero).forEach(l=>{
+      const li = document.createElement('li');
+      li.textContent = `N°${l.numero} — Étage ${l.etage} — Accès : ${l.acces==='oui'?'Oui':'Non'}`;
+      ul.appendChild(li);
+    });
+    s.appendChild(ul);
+  }
+
+  // rdvs list
+  const rdvTitle = document.createElement('div');
+  rdvTitle.style.marginTop = '8px';
+  rdvTitle.style.fontWeight = '700';
+  rdvTitle.style.color = 'var(--accent)';
+  rdvTitle.textContent = 'Rendez‑vous :';
+  s.appendChild(rdvTitle);
+
+  if(rdvs.length === 0){
+    const p = document.createElement('div'); p.style.color='#ddd'; p.textContent = 'Aucun rendez‑vous configuré.'; s.appendChild(p);
+  } else {
+    const ul2 = document.createElement('ul');
+    rdvs.forEach((r, idx)=>{
+      const li = document.createElement('li');
+      const numText = r.numero ? `Logement ${r.numero}` : '(non assigné)';
+      // compute whether this rdv counts as done (needs acces yes)
+      const lg = logements.find(l => l.numero === r.numero);
+      const countsAsDone = !!(r.fait && lg && lg.acces === 'oui');
+      const doneText = countsAsDone ? '— Effectué' : '— À faire / Manqué';
+      li.textContent = `RDV ${idx+1} : ${numText} ${doneText}`;
+      ul2.appendChild(li);
+    });
+    s.appendChild(ul2);
+  }
+
+  // small note
+  const note = document.createElement('div');
+  note.style.marginTop = '10px';
+  note.style.color = '#bbb';
+  note.textContent = 'Lorsque vous cliquez sur "Terminé" vous retournerez au menu principal.';
+  s.appendChild(note);
+}
+
+// --- Fond chaotique (inchangé) ---
+const canvas=document.getElementById('bgCanvas'); const ctx=canvas.getContext('2d');
+function resizeCanvas(){canvas.width=window.innerWidth; canvas.height=window.innerHeight;}
+window.addEventListener('resize',resizeCanvas); resizeCanvas();
+let icons=[]; const iconEmojis=['🪳','💉','AHMP'];
+const ICON_COUNT=50;
+for(let i=0;i<ICON_COUNT;i++){ icons.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,dx:(Math.random()*1.5+0.5)*(Math.random()<0.5?-1:1),dy:(Math.random()*1.5+0.5)*(Math.random()<0.5?-1:1),size:Math.random()*18+12,angle:Math.random()*2*Math.PI,da:(Math.random()*0.02-0.01),emoji:iconEmojis[i%3]}); }
+
+function animate(){ ctx.clearRect(0,0,canvas.width,canvas.height);
+  icons.forEach(icon=>{ icon.x+=icon.dx; icon.y+=icon.dy; icon.angle+=icon.da;
+    if(icon.x<0||icon.x>canvas.width) icon.dx*=-1;
+    if(icon.y<0||icon.y>canvas.height) icon.dy*=-1;
+    ctx.save();
+    ctx.translate(icon.x,icon.y); ctx.rotate(icon.angle); ctx.font=`${icon.size}px Arial`;
+    ctx.fillStyle=icon.emoji==='AHMP'?'#E6007E':'#fff'; ctx.fillText(icon.emoji,0,0); ctx.restore();
+  });
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>
